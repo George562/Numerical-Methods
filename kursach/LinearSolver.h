@@ -4,7 +4,7 @@
 #include <thread>
 
 ////////////////////////////////////////////////////////////
-// Class 
+// Class
 ////////////////////////////////////////////////////////////
 
 template <typename T> class LinearSolver {
@@ -238,7 +238,6 @@ pair<vector<T>, Matrix<T>> LinearSolver<T>::Jacobi(Matrix<T>& m, double epsilon)
                 uT[i][i] =  cos(phi); uT[i][j] = sin(phi);
                 uT[j][i] = -sin(phi); uT[j][j] = cos(phi);
 
-                
                 std::thread first([&](){ alpha = uT * alpha * u; }),
                             second([&](){ resM = resM * u; });
                 first.join();
@@ -261,8 +260,16 @@ pair<vector<T>, Matrix<T>> LinearSolver<T>::Jacobi(Matrix<T>& m, double epsilon)
 template <typename T>
 pair<Matrix<T>, Matrix<T>> LinearSolver<T>::QRdecompose(Matrix<T>& m) {
     size_t N = m.dim.second;
-    Matrix<T> Q = E<T>(N), R(m), v(N, 1), H(N);
+    Matrix<T> Q = E<T>(N), R(m), v(N, 1);
+    vector<Matrix<T>*> H(N - 1, nullptr);
+    std::thread thr([&](){
+        for (size_t i = 0; i < H.size(); i++) {
+            while (H[i] == nullptr) {}
+            Q = Q * (*(H[i]));
+        }
+    });
 
+    Matrix<T>* newH = nullptr;
     for (size_t i = 0; i < N - 1; i++) {
         T temp = 0;
         for (size_t j = i; j < N; j++) {
@@ -270,13 +277,15 @@ pair<Matrix<T>, Matrix<T>> LinearSolver<T>::QRdecompose(Matrix<T>& m) {
             temp = temp + R[j][i] * R[j][i];
         }
         v[i][0] += ((R[i][i] < 0) ? -pow(temp, 0.5) : pow(temp, 0.5));
-        H = E<T>(N) - (v * v.T()) * (T)(2.d / (v.T() * v)[0][0]);
-        std::thread first([&](){ R = H * R; }),
-                    second([&](){ Q = Q * H; });
+        newH = new Matrix<T>;
+        *newH = - (v * v.T()) * (T)(2.d / (v.T() * v)[0][0]);
+        for (size_t j = 0; j < v.dim.first; j++) newH->data[j][j] += 1;
+        H[i] = newH;
+        R = (*(H[i])) * R;
         v[i][0] = 0;
-        first.join();
-        second.join();
     }
+    thr.join();
+    for (size_t i = 0; i < H.size(); i++) delete H[i];
     return {Q, R};
 }
 

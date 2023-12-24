@@ -31,7 +31,6 @@ pair<vector<T>, vector<pair<T, T>>> QRsolve(Matrix<T>& m, double epsilon) {
     Matrix<T> A(m);
     vector<pair<T, T>> resC(N);
     vector<T> resR(N);
-    size_t counter = 0;
     bool flag;
     vector<bool> complex(N, false);
     do {
@@ -55,15 +54,12 @@ pair<vector<T>, vector<pair<T, T>>> QRsolve(Matrix<T>& m, double epsilon) {
                 complex[i] = false;
             }
         }
-        ++counter;
     } while (!flag);
-    cout << "counter = " << counter << '\n';
     size_t l = 0, k = 0;
     for (size_t i = 0; i < N; i++)
         if (complex[i]) resC[l++] = resC[i];
         else resR[k++] = resR[i];
     resR.resize(k);
     resC.resize(l);
-    A.printM();
     return {resR, resC};
 }
