@@ -1,3 +1,4 @@
 chouse test: 1 - LU, 2 - TMA, 3 - Iter, 4 - Jacobi, 5 - QR
-The     parallel time: 0.019529 seconds
-The non parallel time: 0.028024 seconds
+What TheMethod do you want to use: 1 - SimpleIter, 2 - Zaydel
+>>> with epsilon = The     parallel time: 18.171 seconds
+The non parallel time: 41.7956 seconds

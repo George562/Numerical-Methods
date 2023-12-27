@@ -180,7 +180,14 @@ Matrix<T> LinearSolver<T>::Iter(Matrix<T>& m, Matrix<T> b, double epsilon, bool 
         do {
             was = cur;
             if (flag) {
-                cur = betha + alpha * cur;
+                // cur = betha + alpha * cur;
+                #pragma omp parallel for
+                for (size_t i = 0; i < N; i++) {
+                    cur[i][0] = betha[i][0];
+                    for (size_t j = 0; j < N; j++) { 
+                        cur[i][0] += alpha[i][j] * was[j][0];
+                    }
+                }
             } else {
                 for (size_t i = 0; i < N; i++) {
                     cur[i][0] = betha[i][0];
@@ -215,9 +222,14 @@ Matrix<T> LinearSolver<T>::Zaydel(Matrix<T>& m, Matrix<T>& b, double epsilon) {
 template <typename T>
 T LinearSolver<T>::t(Matrix<T>& m) {
     T res = 0;
-    for (size_t i = 0; i < m.dim.first; i++)
+    #pragma omp parallel for shared(res, m)
+    for (size_t i = 0; i < m.dim.first; i++) {
+        T temp = 0;
         for (size_t j = i + 1; j < m.dim.first; j++)
-            res += m[i][j] * m[i][j];
+            temp += m[i][j] * m[i][j];
+        #pragma omp atomic
+        res += temp;
+    }
     return pow(res, 0.5d);
 }
 
@@ -238,8 +250,8 @@ pair<vector<T>, Matrix<T>> LinearSolver<T>::Jacobi(Matrix<T>& m, double epsilon)
                 uT[i][i] =  cos(phi); uT[i][j] = sin(phi);
                 uT[j][i] = -sin(phi); uT[j][j] = cos(phi);
 
-                std::thread first([&](){ alpha = uT * alpha * u; }),
-                            second([&](){ resM = resM * u; });
+                std::thread first ([&alpha, &uT, &u](){ alpha = uT * alpha * u; }),
+                            second([&resM, &u](){ resM = resM * u; });
                 first.join();
                 second.join();
 

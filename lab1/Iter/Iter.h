@@ -27,7 +27,12 @@ Matrix<T> Iter(Matrix<T>& m, Matrix<T> b, double epsilon, bool flag) {
         do {
             was = cur;
             if (flag) {
-                cur = betha + alpha * cur;
+                for (size_t i = 0; i < N; i++) {
+                    cur[i][0] = betha[i][0];
+                    for (size_t j = 0; j < N; j++) { 
+                        cur[i][0] += alpha[i][j] * was[j][0];
+                    }
+                }
             } else {
                 for (size_t i = 0; i < N; i++) {
                     cur[i][0] = betha[i][0];
